@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|  
+  #
+  # Eric:Define a single virtual machine with 2G memory and 2 cpus
+  #
+  config.vm.box = "centos/7"
+  config.vm.define "host"
+  config.vm.hostname = "host"
+  config.vm.provider "vmware_fusion" do |v|
+    v.vmx["memsize"] = "2048"
+    v.vmx["numvcpus"] = "2"
+  end
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "2048"]
+    v.customize ["modifyvm", :id, "--cpus", '2']
+  end
+
+  #
+  # Eric: install Docker-ce
+  #
+  config.vm.synced_folder "./", "/home/vagrant/labs"
+  config.vm.provision "shell", inline: <<-SHELL
+    # install docker
+    curl -fsSL get.docker.com -o get-docker.sh
+    sh get-docker.sh
+
+    # start docker service
+    sudo groupadd docker
+    sudo usermod -aG docker vagrant
+    sudo systemctl start docker
+
+    rm -rf get-docker.sh
+  SHELL
+
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    sudo systemctl start docker
+  SHELL
+
+end

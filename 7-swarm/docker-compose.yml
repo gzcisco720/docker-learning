@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+
+  wordpress:
+    image: wordpress
+    ports: 
+      - 8000:80
+    depends_on: 
+      - mysql
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_PASSWORD: root
+    networks:
+      - my-network
+    deploy:
+      mode: replicated
+      replicas: 5
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+    networks:
+      - my-network
+    volumes:
+      - mysql-data:/var/lib/mysql
+    deploy:
+      mode: global
+      placement:
+        constraints: 
+          - node.role == manager
+        
+volumes:
+  mysql-data:
+
+networks:
+  my-network:
+    driver: overlay
